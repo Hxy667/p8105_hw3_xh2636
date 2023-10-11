@@ -1,0 +1,121 @@
+---
+title: "p8105_hw3_xh2636"
+author: "Xiaoyu Huang"
+date: "2023-10-09"
+output: github_document
+---
+
+# Problem 1
+```{r}
+library(p8105.datasets)
+library(tidyverse)
+library(ggplot2)
+data("instacart")
+```
+
+```{r, include=FALSE}
+data_dim <- dim(instacart)
+
+# Print the number of observations and variables
+num_obs <- nrow(instacart)
+num_obs
+num_var <- ncol(instacart)
+num_var
+```
+
+The dataset has `r num_obs` observation and `r num_var` variables. The key variable in the dataset are their “ids”, “aisle”, and “department name”. Also, we can see the data set contain different product name.
+
+```{r, include=FALSE}
+# Find number of aisle
+num_aisles <- length(unique(instacart$aisle))
+num_aisles
+```
+
+```{r}
+# Find number aisles are the most items ordered from and rank it
+rank_aisle <- instacart %>%
+  group_by(aisle) %>%
+  summarize(total_ordered = n())%>%
+  arrange(-total_ordered)
+rank_aisle
+```
+
+The are `r num_aisles` aisles, and aisle have the most items ordered from is fresh vegetable.
+
+```{r}
+# limiting this to aisles with more than 10000 items ordered.
+aisle_counts <- table(instacart$aisle)
+popular_aisles <- names(aisle_counts[aisle_counts > 10000])
+```
+
+```{r}
+# Make a plot that shows the number of items ordered in each aisle
+instacart %>%
+  count(aisle) %>%
+  filter(n > 10000) %>%
+  arrange(desc(n)) %>%
+  mutate(aisle = fct_reorder(aisle, n)) -> filtered_data
+
+aisle_order_plot <- ggplot(filtered_data, aes(x = aisle, y = n)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "Aisle", y = "Number of Items Ordered") +
+  theme_minimal()
+
+print(aisle_order_plot)
+```
+
+We can see the arrangement of these data from high to low, and we can see that there are 39 categories with more than 10,000 quantities, and fresh vegetable has the largest number. Butter accounts for the smallest proportion here.
+
+```{r, message=FALSE}
+# Make a table showing the three most popular items
+three_mpi <- instacart %>%
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits"))
+
+# Group aisle and product name
+aisle_product_counts <- three_mpi %>%
+  group_by(aisle, product_name) %>%
+  summarise(order_count = n())%>%
+  arrange(aisle, desc(order_count))
+
+# Rank the items within each aisle by order count
+aisle_product_counts <- aisle_product_counts %>%
+  group_by(aisle) %>%
+  mutate(rank = rank(-order_count))
+top_items <- aisle_product_counts %>%
+  filter(rank <= 3)
+top_items <- top_items %>%
+  select(aisle, rank, product_name, order_count)
+
+print(top_items)
+```
+
+We selected the top three comprehensive rankings from these three categories, so that we can read this table more intuitively. And we can see that the number of vegetable orders is the highest, far exceeding the number of dog food care.
+
+```{r, message=FALSE, warning=FALSE}
+hour_day <- instacart %>%
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream"))
+
+# Extract day of the week and hour of the day from the "order_hour_of_day" column
+hour_day <- hour_day %>%
+  mutate(day_of_week = weekdays(as.Date(order_dow, origin = "1990-01-01")),
+         hour_of_day = order_hour_of_day)
+
+# Calculate the mean hour of the day for each product on each day of the week
+myday <- hour_day %>%
+  group_by(product_name, day_of_week) %>%
+  summarise(mean_hour = mean(hour_of_day, na.rm = TRUE)) %>%
+  pivot_wider(names_from = day_of_week, values_from = mean_hour)
+
+# Specify the order of days of the week
+day_order <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+myday <- myday %>%
+  select(product_name, day_order)
+print(myday)
+```
+
+From the data we compiled, we can see that for coffee ice cream, Tuesday has the largest average value and Friday has the smallest average value. On the other hand, pink lady apple has the largest average on Tuesday and the smallest on Sunday.
+
+#Problem 2
+
+
