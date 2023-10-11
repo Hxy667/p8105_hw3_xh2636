@@ -117,5 +117,45 @@ print(myday)
 From the data we compiled, we can see that for coffee ice cream, Tuesday has the largest average value and Friday has the smallest average value. On the other hand, pink lady apple has the largest average on Tuesday and the smallest on Sunday.
 
 #Problem 2
+```{r}
+library(p8105.datasets)
+data("brfss_smart2010")
+view(brfss_smart2010)
+```
 
+```{r}
+# Data cleaning 
+brfss <- brfss_smart2010 %>%
+  janitor::clean_names() %>%
+  filter(topic == "Overall Health") %>%
+  mutate(response = factor(response, levels = c("Excellent", "Very good", 
+                                                "Good", "Fair", "Poor")))
+# organize responses as a factor taking levels ordered from “Poor” to “Excellent”
 
+view(brfss)
+```
+
+```{r}
+# states were observed at 7 or more locations at 2002
+states_obv <- brfss%>%
+  filter(year == "2002") %>%
+  group_by(locationabbr)%>%
+  summarise(count = n_distinct(locationdesc))%>%
+filter(count >= 7)
+print(states_obv)
+num_rol <- nrow(states_obv)
+```
+
+From the result we can see that total of `r num_rol` states is present in the result. They are CT, FL, MA, NC, NJ, and PA are the states observed at 7 or more locations at the year of 2002. 
+
+```{r}
+# states were observed at 7 or more locations at 2010
+states_obv <- brfss%>%
+  filter(year == "2010") %>%
+  group_by(locationabbr)%>%
+  summarise(count = n_distinct(locationdesc))%>%
+filter(count >= 7)
+print(states_obv)
+num_x <- nrow(states_obv)
+```
+From the result we can see that total of `r num_x` states is present in the result. They are CA, CO, FL, MA, MD, NC, NE, NJ, NY, and OH are the states observed at 7 or more locations at the year of 2010. 
