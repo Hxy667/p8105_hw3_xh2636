@@ -188,7 +188,58 @@ From the graph we can see that, for "Excellent", the data in 2006 and 2010 are r
 
 # Problem 3
 ```{r}
-# Load, tidy, merge, and organize the data sets.
-acc_data <- read_csv("./data/nhanes_accel.csv")
+# Load, tidy and organize the acceleration data sets
+acc_data <- read_csv("./data/nhanes_accel.csv") %>%
+janitor::clean_names()
+
+# Load, tidy and organize the covar data sets.
+covar <- read_csv("./data/nhanes_covar.csv", skip = 4) %>%
+  janitor::clean_names()%>%
+  mutate(education = recode(education, "1" = "Less than high school", 
+                          "2" = "High school equivalent", "3" = "More than high school"))
+covar$sex <- ifelse(covar$sex == 1, "Male", "Female") 
+covar <- covar %>%
+  mutate(sex = factor(sex), education = factor(education))
+
+# exclude age less than 21 yrs old
+covar <- covar %>%
+  filter(age >= 21) %>%
+drop_na()
+
+# Merge both data set
+combined <- left_join(covar, acc_data, by = "seqn")
+view(combined)
 ```
+
+This combined data table, as required, contains all information from both data sets and excludes persons under the age of 21, also bind with the same "seqn". Not only that, but also sent out those NA data.
+
+```{r, message=FALSE}
+# Table for men and women with different education level
+combined <- combined %>%
+  filter(!is.na(sex) & !is.na(education))
+education_table <- combined %>%
+  group_by(education, sex) %>%
+  summarise(count = n()) %>%
+  pivot_wider(names_from = sex, values_from = count) %>%
+  mutate(Total = Male + Female) %>%
+  arrange(desc(Total))
+view(education_table)
+```
+
+```{r, message=FALSE}
+# visualization of the age distributions for men and women in each education category
+vis_plot <- ggplot(combined, aes(x = education, y = age, fill = sex)) +
+  geom_boxplot() +
+  labs(title = "Age Distribution by Gender and Education",
+       x = "Education Level",
+       y = "Age") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+print(vis_plot)
+```
+
+Overall, this visualization effectively conveys how age, education, and gender are related to each other in our dataset. For "high school equivalent", the average data of women is significantly higher than that of men, and there is not much difference in the other two intervals. For "More than high school", the median value for women is lower than that for men. And from this data, we can also see that young people account for a larger proportion of those with higher education.
+
+
+
 
